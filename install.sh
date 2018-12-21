@@ -345,6 +345,9 @@ elif [ $SERVER_WEBSERVER == 'nginx' ]; then
   PLAYBOOK_FILE="playbook-nginx.yml"
 fi
 
+# CUSTOMIZATION FOR UPGRADE TESTS:
+ANSIBLE_EXTRA_VARS="$ANSIBLE_EXTRA_VARS devshop_cli_path=/usr/share/devshop-1.0.0-rc4-testing"
+
 ansible-playbook -i inventory $PLAYBOOK_FILE --connection=local --extra-vars "$ANSIBLE_EXTRA_VARS" $ANSIBLE_VERBOSITY
 
 # @TODO: Remove. We should do this in the playbook, right?
