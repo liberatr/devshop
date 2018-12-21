@@ -13,7 +13,7 @@ projects:
     type: profile
     download:
       type: git
-      branch: 1.x
+      tag: 1.0.0-rc4-test1
       url: http://github.com/opendevshop/devmaster.git
 
   devel:
