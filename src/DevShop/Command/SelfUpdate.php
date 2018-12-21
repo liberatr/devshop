@@ -104,13 +104,18 @@ EOT
       $default_version = $input->getArgument('devshop-version')? $input->getArgument('devshop-version'): $latest;
       $helper = $this->getHelper('question');
 
-      while ($this->checkVersion($target_version) == FALSE) {
-        $question = new Question("Target Version: (Default: $default_version) ", $default_version);
-        $target_version = $helper->ask($input, $output, $question);
+      if ($input->isInteractive()) {
+        while ($this->checkVersion($target_version) == FALSE) {
+          $question = new Question("Target Version: (Default: $default_version) ", $default_version);
+          $target_version = $helper->ask($input, $output, $question);
 
-        if (!$this->checkVersion($target_version)) {
-          $output->writeln("<fg=red>Version $target_version not found</>");
+          if (!$this->checkVersion($target_version)) {
+            $output->writeln("<fg=red>Version $target_version not found</>");
+          }
         }
+      }
+      else {
+        $target_version = $default_version;
       }
       $output->writeln("Version $target_version confirmed.");
 
