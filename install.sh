@@ -34,7 +34,6 @@
 #    --install-path       The path to install the main devshop source code including CLI, makefile, roles.yml (Default: /usr/share/devshop)
 #    --server-webserver   Set to 'nginx' if you want to use the Aegir NGINX packages. (Default: apache)
 #    --makefile           The makefile to use to build the front-end site. (Default: {install-path}/build-devmaster.make)
-#    --playbook           The Ansible playbook.yml file to use other than the included playbook.yml. (Default: {install-path}/playbook.yml)
 #    --email              The email address to use for User 1. Enter your email to receive notification when the install is complete.
 #    --aegir-uid          The UID to use for creating the `aegir` user
 #    --ansible-default-host-list  If your server is using a different ansible default host, specify it here. Default: /etc/ansible/hosts*
@@ -101,9 +100,6 @@ LINE=---------------------------------------------
 # Detect playbook path option
 while [ $# -gt 0 ]; do
   case "$1" in
-    --playbook=*)
-      PLAYBOOK_PATH="${1#*=}"
-      ;;
     --makefile=*)
       MAKEFILE_PATH="${1#*=}"
       ;;
@@ -172,17 +168,6 @@ fi
 
 # Output Web Server
 echo " Web Server: $SERVER_WEBSERVER"
-
-if [ $PLAYBOOK_PATH ]; then
-    :
-# Detect playbook next to the install script
-elif [ -z $DEVSHOP_INSTALL_PATH ]; then
-    PLAYBOOK_PATH=$DEVSHOP_INSTALL_PATH
-elif [ -f "$DEVSHOP_SCRIPT_PATH/playbook.yml" ]; then
-    PLAYBOOK_PATH=$DEVSHOP_SCRIPT_PATH
-else
-    PLAYBOOK_PATH=$DEVSHOP_INSTALL_PATH
-fi
 
 # If --makefile option is not set, use DEVSHOP_INSTALL_PATH/build-devmaster.make
 if [ -z $MAKEFILE_PATH ]; then
@@ -305,31 +290,27 @@ else
   echo $MYSQL_ROOT_PASSWORD > /tmp/mysql_root_password
 fi
 
+# Clone the installer code if a playbook path was not set.
+if [ ! -d "$DEVSHOP_INSTALL_PATH" ]; then
+    git clone $DEVSHOP_GIT_REPO $DEVSHOP_INSTALL_PATH
+    cd $DEVSHOP_INSTALL_PATH
+    git checkout $DEVSHOP_VERSION
+else
+    cd $DEVSHOP_INSTALL_PATH
+    git fetch
+    git checkout $DEVSHOP_VERSION
+fi
+
 echo $LINE
 echo " Hostname: $HOSTNAME_FQDN"
 echo " MySQL Root Password: $MYSQL_ROOT_PASSWORD"
-
-# Clone the installer code if a playbook path was not set.
-if [ ! -f "$PLAYBOOK_PATH/playbook.yml" ]; then
-  if [ ! -d "$PLAYBOOK_PATH" ]; then
-    git clone $DEVSHOP_GIT_REPO $PLAYBOOK_PATH
-    cd $PLAYBOOK_PATH
-    git checkout $DEVSHOP_VERSION
-  else
-    cd $PLAYBOOK_PATH
-    git fetch
-    git checkout $DEVSHOP_VERSION
-  fi
-  PLAYBOOK_PATH=$DEVSHOP_INSTALL_PATH
-  echo $LINE
-fi
-
-echo " Playbook: $PLAYBOOK_PATH/playbook.yml "
+echo " Playbook: $DEVSHOP_INSTALL_PATH/playbook.yml "
+echo " Roles: $DEVSHOP_INSTALL_PATH/playbook.yml "
 echo " Makefile: $MAKEFILE_PATH "
 echo $LINE
 
 
-cd $PLAYBOOK_PATH
+cd $DEVSHOP_INSTALL_PATH
 
 # Create inventory file
 if [ ! -f "inventory" ]; then
@@ -339,8 +320,8 @@ else
   echo "Inventory file found."
 fi
 
-echo " Installing ansible roles using $PLAYBOOK_PATH/roles.yml ..."
-ansible-galaxy install -r "$PLAYBOOK_PATH/roles.yml" -p roles --force
+echo " Installing ansible roles using $DEVSHOP_INSTALL_PATH/roles.yml ..."
+ansible-galaxy install -r "$DEVSHOP_INSTALL_PATH/roles.yml" -p roles --force
 echo $LINE
 
 # If ansible playbook fails syntax check, report it and exit.
@@ -353,7 +334,7 @@ fi
 echo " Installing with Ansible..."
 echo $LINE
 
-ANSIBLE_EXTRA_VARS="server_hostname=$HOSTNAME_FQDN devshop_cli_path=$DEVSHOP_INSTALL_PATH mysql_root_password=$MYSQL_ROOT_PASSWORD playbook_path=$PLAYBOOK_PATH aegir_server_webserver=$SERVER_WEBSERVER devshop_version=$DEVSHOP_VERSION aegir_user_uid=$AEGIR_USER_UID"
+ANSIBLE_EXTRA_VARS="server_hostname=$HOSTNAME_FQDN devshop_cli_path=$DEVSHOP_INSTALL_PATH mysql_root_password=$MYSQL_ROOT_PASSWORD playbook_path=$DEVSHOP_INSTALL_PATH aegir_server_webserver=$SERVER_WEBSERVER devshop_version=$DEVSHOP_VERSION aegir_user_uid=$AEGIR_USER_UID"
 
 if [ "$TRAVIS" == "true" ]; then
   ANSIBLE_EXTRA_VARS="$ANSIBLE_EXTRA_VARS travis=true travis_repo_slug=$TRAVIS_REPO_SLUG travis_branch=$TRAVIS_BRANCH travis_commit=$TRAVIS_COMMIT supervisor_running=false"
@@ -387,7 +368,7 @@ ansible-playbook -i inventory $PLAYBOOK_FILE --connection=local --extra-vars "$A
 
 # @TODO: Remove. We should do this in the playbook, right?
 # Run Composer install to enable devshop cli
-#cd $PLAYBOOK_PATH
+#cd $DEVSHOP_INSTALL_PATH
 #composer install
 
 # Run devshop status, return exit code.
