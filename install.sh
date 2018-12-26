@@ -171,6 +171,11 @@ else
     PLAYBOOK_PATH=$DEVSHOP_INSTALL_PATH
 fi
 
+# If --makefile option is not set, use DEVSHOP_INSTALL_PATH/build-devmaster.make
+if [ -z $MAKEFILE_PATH ]; then
+  MAKEFILE_PATH="$DEVSHOP_INSTALL_PATH/build-devmaster.make"
+fi
+
 echo $LINE
 
 # Notify user we are using the found webserver.
