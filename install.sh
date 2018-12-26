@@ -176,6 +176,8 @@ echo " Web Server: $SERVER_WEBSERVER"
 if [ $PLAYBOOK_PATH ]; then
     :
 # Detect playbook next to the install script
+elif [ -z $DEVSHOP_INSTALL_PATH ]; then
+    PLAYBOOK_PATH=$DEVSHOP_INSTALL_PATH
 elif [ -f "$DEVSHOP_SCRIPT_PATH/playbook.yml" ]; then
     PLAYBOOK_PATH=$DEVSHOP_SCRIPT_PATH
 else
@@ -337,7 +339,7 @@ else
   echo "Inventory file found."
 fi
 
-echo " Installing ansible roles..."
+echo " Installing ansible roles using $PLAYBOOK_PATH/roles.yml ..."
 ansible-galaxy install -r "$PLAYBOOK_PATH/roles.yml" -p roles --force
 echo $LINE
 
