@@ -43,7 +43,7 @@
 
 # Version used for cloning devshop playbooks
 # Must be a branch or tag.
-DEVSHOP_VERSION=1.0.0-rc4
+DEVSHOP_VERSION=1.0.0-rc4-testing
 DEVSHOP_INSTALL_PATH=/usr/share/devshop
 SERVER_WEBSERVER=apache
 MAKEFILE_PATH=''
